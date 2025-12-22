@@ -1,0 +1,196 @@
+
+import { IconsSearch } from "@/assets/icons";
+import GlobalLoading from "@/src/components/GlobalLoading";
+import BackButton from "@/src/components/ui/BackButton";
+import Wrapper from "@/src/components/Wrapper";
+import { QuoteItem } from "@/src/lib/global-type";
+import tw from "@/src/lib/tailwind";
+import { useLazyGetAllQuetsRequestQuery } from "@/src/redux/categoryWiseQuotesApi/categoryHomeApi";
+import { router } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
+import { FlatList, Image, RefreshControl, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { SvgXml } from "react-native-svg";
+
+// Debounce hook implementation
+const useDebounce = (value: string, delay: number) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
+
+const Search = () => {
+  const [userSearch, setUserSearch] = useState<string>('');
+  const [posts, setPosts] = useState<QuoteItem[]>([]);
+  const [page, setPage] = useState<number>(1);
+  const [hasMore, setHasMore] = useState<boolean>(true);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [loadingMore, setLoadingMore] = useState<boolean>(false);
+
+  const debouncedSearch = useDebounce(userSearch, 500); // 500ms debounce delay
+
+  const [fetchPosts, { isLoading }] = useLazyGetAllQuetsRequestQuery();
+
+  // Load posts function
+  const loadPosts = useCallback(async (pageNum = 1, isRefresh = false, searchTerm = '') => {
+    try {
+      const res = await fetchPosts({
+        page: pageNum,
+        search: searchTerm || userSearch
+      }).unwrap();
+
+      const newPosts = res?.data?.data ?? [];
+
+      if (isRefresh) {
+        setPosts(newPosts);
+      } else {
+        setPosts((prev) => [...prev, ...newPosts]);
+      }
+
+      const currentPage = res?.data?.current_page ?? 0;
+      const lastPage = res?.data?.last_page ?? 0;
+
+      setHasMore(currentPage < lastPage);
+      setPage(currentPage + 1);
+    } catch (err) {
+      console.log("Fetch Error:", err);
+    } finally {
+      setRefreshing(false);
+      setLoadingMore(false);
+    }
+  }, [fetchPosts, userSearch]);
+
+  // Pull-to-refresh handler
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    setPage(1);
+    loadPosts(1, true);
+  }, [loadPosts]);
+
+  // Load more handler
+  const handleLoadMore = useCallback(() => {
+    if (!loadingMore && hasMore) {
+      setLoadingMore(true);
+      loadPosts(page);
+    }
+  }, [loadingMore, hasMore, page, loadPosts]);
+
+  // Initial load and search term change
+  useEffect(() => {
+    setPage(1);
+    setRefreshing(true);
+    loadPosts(1, true, debouncedSearch);
+  }, [debouncedSearch]);
+
+  // Handle search input change
+  const handleSearchChange = (text: string) => {
+    setUserSearch(text);
+  };
+
+
+  return (
+    <Wrapper>
+      {/* Search section */}
+      <BackButton title="Browse Quotes" />
+      <View style={tw`flex-1`}>
+        <View style={tw`flex-col gap-6 mt-3`}>
+          <View
+            style={tw`bg-input_bg_gray items-center rounded-full flex-row px-4 gap-1`}
+          >
+            <SvgXml xml={IconsSearch} />
+            <TextInput
+              style={tw`py-4 flex-1`}
+              placeholder="Search quotes"
+              placeholderTextColor="#888888"
+              selectionColor="#888888"
+              returnKeyType="search"
+              clearButtonMode="while-editing"
+              value={userSearch}
+              onChangeText={handleSearchChange}
+            />
+          </View>
+        </View>
+
+        {/* Quotes list */}
+        <View style={tw`flex-1 pb-5 mt-4`}>
+          {isLoading && posts.length === 0 ? (
+            <GlobalLoading />
+          ) : (
+            <FlatList
+              data={posts}
+              keyExtractor={(item, index) => `${item.id}-${index}`}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={tw`rounded-2xl bg-input_bg_gray my-2`}
+                  onPress={() =>
+                    router.push(`/business-provider/view-user-quotes/${item.id}`)
+                  }
+                >
+                  <View style={tw`flex-row items-center justify-between p-4`}>
+                    {/* Left: Image + Name + Description */}
+                    <View style={tw`flex-row items-center gap-2 flex-1`}>
+                      <Image
+                        source={{ uri: item?.user?.avatar }}
+                        style={tw`w-12 h-12 rounded-full`}
+                      />
+                      <View style={tw`flex-1`}>
+                        <Text
+                          style={tw`text-lg text-title_color font-roboto-600`}
+                          numberOfLines={1}
+                        >
+                          {item?.user?.full_name || 'Unknown User'}
+                        </Text>
+                        <Text
+                          style={tw`text-sm text-secondary_button_color font-roboto-400`}
+                          numberOfLines={2}
+                        >
+                          {item?.describe_issue?.slice(0, 70) || 'No description available'}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Right: Expected Budget */}
+                    <Text style={tw`text-lg text-button_color font-roboto-700 ml-2`}>
+                      ${item?.expected_budget ?? '--'}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+              onEndReached={handleLoadMore}
+              onEndReachedThreshold={0.5}
+              refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+              }
+              ListFooterComponent={() =>
+                loadingMore ? (
+                  <GlobalLoading />
+                ) : null
+              }
+              ListEmptyComponent={() => (
+                !isLoading && (
+                  <View style={tw`items-center justify-center mt-10`}>
+                    <Text style={tw`text-gray-500`}>
+                      {userSearch ? 'No quotes found for your search' : 'No quotes available'}
+                    </Text>
+                  </View>
+                )
+              )}
+              showsVerticalScrollIndicator={false}
+            />
+          )}
+        </View>
+      </View>
+    </Wrapper>
+  );
+};
+
+export default Search;
