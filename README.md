@@ -2,7 +2,24 @@
 
 A comprehensive React Native mobile application built with Expo that connects pool owners with professional pool service providers. The platform features dual user roles, real-time communication, quote management, payment processing, and subscription services.
 
+##App Screenshots
+
+<img width="309" height="669" alt="Screenshot 2025-12-23 at 9 52 15 PM" src="https://github.com/user-attachments/assets/a7c088ca-75a3-45bf-a3d8-fce3df98a92b" />
+
+<img width="309" height="657" alt="Screenshot 2025-12-23 at 9 54 48 PM" src="https://github.com/user-attachments/assets/3bae4953-2119-435d-b26b-a8ce7091dfeb" />
+
+<img width="309" height="657" alt="Screenshot 2025-12-23 at 9 52 53 PM" src="https://github.com/user-attachments/assets/cb333861-7220-487f-a1c3-7cea1c2e9075" />
+
+<img width="309" height="657" alt="Screenshot 2025-12-23 at 9 53 10 PM" src="https://github.com/user-attachments/assets/587b7552-dcc2-4682-9f78-90ac8a7fa9f1" />
+
+<img width="309" height="657" alt="Screenshot 2025-12-23 at 9 53 25 PM" src="https://github.com/user-attachments/assets/c20761be-4dd9-401e-a6fd-a4358f2e5030" />
+
+<img width="309" height="657" alt="Screenshot 2025-12-23 at 9 54 39 PM" src="https://github.com/user-attachments/assets/5f7fb771-408a-4bd0-9f60-5ab3b4cd8fad" />
+
+
+
 ## 📱 Overview
+
 
 Pool Valet streamlines the process of finding and hiring pool maintenance professionals. Home owners can request quotes for pool services, while business providers can browse opportunities, submit bids, and manage their service offerings. The app includes real-time chat, secure payments via Stripe, and a subscription-based business model.
 
